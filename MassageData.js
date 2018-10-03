@@ -319,7 +319,7 @@ function cleanProduct(i) {
             console.log("logic needed");
         }
     });
-    console.log(JSON.stringify(newProduct, null, 4));
+    return newProduct;
 }
 
 function cleanShopSite(input) {
@@ -328,13 +328,12 @@ function cleanShopSite(input) {
         Object.keys(input).forEach(i => cleanProduct(input[i]))
         node[0] = input;
     } else if(input.constructor === Array) {
-        input.forEach(i => cleanProduct(i))
-        node[0] = input;
+        input.forEach(i => node.push(cleanProduct(i)))
     }
-    
     return node;
 }
 
-console.log(JSON.stringify(cleanShopSite(sample.ShopSiteProducts.Products[0].Product), null, 4));
 
+let result = cleanShopSite(sample.ShopSiteProducts.Products[0].Product)
 
+fs.writeFile(__dirname + '/data/pprsfull-massaged.json', JSON.stringify(result, null, 4), () => {})
