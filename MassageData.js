@@ -1,9 +1,9 @@
 const fs = require('fs');
-
+var globalstate;
+var variableproblems = [];
 //This was my current idea for pulling in the full JSON for massaging, but I'm not
 //convinced this is the best way.
 
-const jsonFile = fs.readFileSync(__dirname + '/data/pprsfull.json', 'utf8');
 
 let sample = {
     "ShopSiteProducts": {
@@ -269,29 +269,38 @@ function variableProduct(productOptionsArr) {
 
     let name;
 
-    products.forEach(key => {
-        let productOptions={};
-
-        for (var item in key) {
-            if(item == "$") {
-                try {
-                    productOptions["Name"] = key["$"]["name"];
+    try{
+        if(products != "" || products != undefined){
+            products.forEach(key => {
+                let productOptions={};
+        
+                for (var item in key) {
+                    if(item == "$") {
+                        try {
+                            productOptions["Name"] = key["$"]["name"];
+                        }
+                        catch(ex) {
+                            console.error(ex);
+                        }
+                    } else {
+                        try {
+                            productOptions[item] = key[item][0];
+                        }
+                        catch (ex) {
+                            console.error(ex);
+                        }
+                    } 
                 }
-                catch(ex) {
-                    console.error(ex);
-                }
-            } else {
-                try {
-                    productOptions[item] = key[item][0];
-                }
-                catch (ex) {
-                    console.error(ex);
-                }
-            } 
+                returnProductOptions.push(productOptions);
+            })
+            return returnProductOptions;
         }
-        returnProductOptions.push(productOptions);
-    })
-    return returnProductOptions;
+        else {return};
+        
+    }
+    catch(err) {
+        variableproblems.push(globalstate["Name"]);
+    }
 }
 
 function cleanProduct(i) {
@@ -299,7 +308,14 @@ function cleanProduct(i) {
     Object.keys(i).forEach( key => {
         if(i[key].constructor === Array) {
             if(key === "ProductOptions"){
-                newProduct[key] =  variableProduct(i[key]);
+                try{
+                    globalstate = i;
+                    newProduct[key] =  variableProduct(i[key]);
+                } catch(err) {
+                    console.error(err)
+                }
+            } else if(key === "Response") {
+                return;
             } else if(i[key][0] != "" && i[key][0] != "\n") {
                 newProduct[key] = eliminateSingleItems(i[key]);
             }
@@ -325,15 +341,52 @@ function cleanProduct(i) {
 function cleanShopSite(input) {
     let node = [];
     if(input.constructor === Object) {
-        Object.keys(input).forEach(i => cleanProduct(input[i]))
-        node[0] = input;
+        Object.keys(input).forEach(i => node = cleanProduct(input[i]))
     } else if(input.constructor === Array) {
-        input.forEach(i => node.push(cleanProduct(i)))
+        input.forEach(i => node = cleanProduct(i))
     }
     return node;
 }
 
+//Working
+// let result = cleanShopSite(sample);
+// fs.writeFile(__dirname + '/data/pprsfull-massaged.json', JSON.stringify(result, null, 4), () => {})
 
-let result = cleanShopSite(sample.ShopSiteProducts.Products[0].Product)
+//Working
+// let newsample = fs.readFileSync(__dirname + '/data/pprssample.json');
+// let jsonsample = JSON.parse(newsample);
+// let result = cleanShopSite(jsonsample);
+// fs.writeFile(__dirname + '/data/pprsfull-massaged-notworking.json', JSON.stringify(result, null, 4), () => {})
+
+
+
+
+//Experimental
+
+
+let newsample = fs.readFileSync(__dirname + '/data/pprssample.json');
+let jsonsample = JSON.parse(newsample);
+let result = cleanShopSite(jsonsample);
 
 fs.writeFile(__dirname + '/data/pprsfull-massaged.json', JSON.stringify(result, null, 4), () => {})
+
+console.log("Complete");
+if(variableproblems.length > 0) {
+    console.log('\x1b[31m%s\x1b[0m',variableproblems.length + " Problems Encountered in Variable Products");
+    console.log('\x1b[31m%s\x1b[0m', "The first problem shows up in " + variableproblems[0]);
+} else {
+    console.log('\x1b[32m%s\x1b[0m', "No problems found");
+}
+
+
+
+
+// const readFilePromise = require('util').promisify(fs.readFile);
+
+// readFilePromise(__dirname + '/data/pprssample.json')
+// .then(data => JSON.parse(data))
+// .then(data => console.log(data))
+// .then(data => cleanShopSite(data))
+// // .then(data => {fs.writeFile(__dirname + '/data/pprsfull-massaged.json', JSON.stringify(data, null, 4), () => {})});
+// .catch(data => console.log(data))
+
