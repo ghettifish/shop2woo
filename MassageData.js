@@ -1,6 +1,7 @@
 const fs = require('fs');
 var globalstate;
 var variableproblems = [];
+var productsbuilt;
 //This was my current idea for pulling in the full JSON for massaging, but I'm not
 //convinced this is the best way.
 
@@ -307,7 +308,7 @@ function cleanProduct(i) {
     let newProduct = {};
     Object.keys(i).forEach( key => {
         if(i[key].constructor === Array) {
-            if(key === "ProductOptions"){
+            if(key === "ProductOptions" && i[key][0] != "") {
                 try{
                     globalstate = i;
                     newProduct[key] =  variableProduct(i[key]);
@@ -345,6 +346,7 @@ function cleanShopSite(input) {
     } else if(input.constructor === Array) {
         input.forEach(i => node = cleanProduct(i))
     }
+    productsbuilt = node["Products"].length;
     return node;
 }
 
@@ -364,7 +366,7 @@ function cleanShopSite(input) {
 //Experimental
 
 
-let newsample = fs.readFileSync(__dirname + '/data/pprssample.json');
+let newsample = fs.readFileSync(__dirname + '/data/pprsfull.json');
 let jsonsample = JSON.parse(newsample);
 let result = cleanShopSite(jsonsample);
 
@@ -375,7 +377,9 @@ if(variableproblems.length > 0) {
     console.log('\x1b[31m%s\x1b[0m',variableproblems.length + " Problems Encountered in Variable Products");
     console.log('\x1b[31m%s\x1b[0m', "The first problem shows up in " + variableproblems[0]);
 } else {
+
     console.log('\x1b[32m%s\x1b[0m', "No problems found");
+    console.log('\x1b[32m%s\x1b[0m', "Successfully Built " + productsbuilt + " products");
 }
 
 
