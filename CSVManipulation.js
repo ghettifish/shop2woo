@@ -1,8 +1,5 @@
 const fs = require('fs');
 const Json2csvTransform = require('json2csv').Transform;
-const writeFile = require('./DataManipulation').writeFile;
-
-
 
 /*---------------------------------------------------
 
@@ -15,7 +12,7 @@ function readFile(path, name, extension = "") {
     return JSON.parse(fs.readFileSync(path + name + extension , 'utf8'));
 };
 
-let jsonFile = JSON.parse(fs.readFileSync(__dirname + '/data/pruned091618.json', 'utf8'));
+let jsonFile = JSON.parse(fs.readFileSync(__dirname + '/data/pprsfull-massaged.json', 'utf8'));
 
 
 
@@ -271,5 +268,6 @@ function strip(file) {
             fs.writeFile("stripped-pprsfull.json", JSON.stringify(result, null,4), () => {});
 }
 
-writeFile("pruned", "./data/", "091618", ".json", JSON.stringify(mapCSV(jsonFile), null, 4));
+// writeFile("pruned", "./data/", "091618", ".json", JSON.stringify(mapCSV(jsonFile), null, 4));
 
+buildCSV(jsonFile);
