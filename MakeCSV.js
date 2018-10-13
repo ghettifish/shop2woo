@@ -1,4 +1,4 @@
-const imageDir = 'http://pprs.vm/wp-content/uploads/store/';
+const imageDir = 'http://pprs-clone.vm/wp-content/uploads/store/';
 const showInvalid = true;
 
 const fs = require('fs');
@@ -18,7 +18,8 @@ const fields = [
   "Position",
   "Attribute 1 name",
   "Attribute 1 value(s)",
-  "Attribute 1 visible"
+  "Attribute 1 visible",
+  "Attribute 1 global"
 ];
 
 
@@ -33,8 +34,8 @@ function SortProducts() {
   this['Parent'] =  '';
   this['Position'] = ''; //Parent gets 0, everything else counts uses array index;
   this['Attribute 1 value(s)'] = ''; //must be 1 for the parent
-  this['Attribute 1 visible'] = ''; //parent will be 1 for visible unless otherwise marked;
   this['Regular price']  =  0.00;  //May need to add with Price Modifier for variable products
+  this['Attribute 1 global'] = 0;
   
   //Constants
   this['Published'] = 1; // 1 or 0
@@ -42,18 +43,17 @@ function SortProducts() {
   this['Attribute 1 name'] = 'options';
 
   this["buildProduct"] = function(product, type) {
-    let visibility = product['Use'] == 'checked' ? 'visible' : 'hidden';
-    let inStock = product['Use'] == 'checked' ? 1 : 0;
+    let visibility = product['Use'] === 'checked' ? 'visible' : 'hidden';
     this['Type'] = type;
     this['SKU'] = product['SKU'];
     this['Name'] = product['Name'];
     this['Visibility in catalog'] = visibility;
-    this['In stock?'] = inStock; // 1 or 0
+    this['In stock?'] = 1; // 1 or 0
     if(product["Image"] != "none"){
       this['Images'] = imageDir + product["Graphic"];
     }
     this['Position'] = 0; //Parent gets 0, everything else counts uses array index;
-    this['Attribute 1 visible'] = 1; //parent will be 1 for visible unless otherwise marked;
+    this['Attribute 1 visible'] = ""; //parent will be 1 for visible unless otherwise marked;
     
     this['Published'] = 1; // 1 or 0
     this['Allow customer reviews?'] = 0;
@@ -80,17 +80,22 @@ function valid(product, logger) {
 
 
 
-function buildVariation(product, parentSKU, position, newJSON, parentPrice, parentDescription) {
+function buildVariation(product, parentSKU, position, newJSON, parentPrice, parentDescription, parentName, passedName) {
   let revProduct = new SortProducts();
   
   let priceModifier = parseInt(product["PriceModifier"], 10);
   let price = product["PriceModifier"] != "" ? priceModifier : 0;
   revProduct.buildProduct(product, 'variation');
-
+  let inStock = product['Use'] === 'checked' ? 1 : 0;
+  revProduct['Name'] = parentName + ' - ' + product['Name'];
+  revProduct['In stock?'] = inStock;
+  revProduct['Published'] = inStock;
   revProduct['Parent'] = parentSKU;
   revProduct['Position'] = position;
   revProduct['Regular price']  =  price + parseInt(parentPrice, 10);
   revProduct['Description'] = "";
+  revProduct['Attribute 1 value(s)'] = passedName;
+
 
 
   newJSON.push(revProduct);
@@ -103,12 +108,13 @@ function buildVariable(product, newJSON) {
   revProduct['Attribute 1 value(s)'] = product["OptionMenus"].join(",");
   revProduct['Regular price']  =  product["Price"];
   revProduct['Description'] = product['ProductDescription'];
-
+  revProduct['Attribute 1 visible'] = 1;
+  newJSON.push(revProduct);
   product["ProductOptions"].forEach((k,position) => {
-    buildVariation(k, product['SKU'], (position + 1), newJSON, product["Price"], product['ProductDescription']);
+    buildVariation(k, product['SKU'], (position + 1), newJSON, product["Price"], product['ProductDescription'],product['Name'],product["OptionMenus"][position]);
   });
 
-  newJSON.push(revProduct);
+  
   return;
 }
 
@@ -116,6 +122,7 @@ function buildSimple(product, newJSON) {
   let revProduct = new SortProducts();
   revProduct.buildProduct(product,'simple');
   revProduct['Regular price']  =  product["Price"];
+  revProduct['Description'] = product['ProductDescription'];
 
   newJSON.push(revProduct);
   return;
@@ -128,6 +135,7 @@ function buildJSON(filename) {
 
   let newJSON = [];
   let invalidProducts = [];
+
   products.forEach(parent => {
     
     //Parent Level Products
@@ -161,7 +169,6 @@ function buildJSON(filename) {
   return newJSON;
 }
 
-
 let data = buildJSON('/data/pprsfull-massaged.json');
 
 function buildCSV(data, fields){
@@ -172,6 +179,4 @@ function buildCSV(data, fields){
 
 //fs.writeFile(__dirname + '/data/testing-buildJSON.json', data, () => {});
 
-fs.writeFile(__dirname + '/data/testing-MakeCSV.csv', buildCSV(data,fields), () => {});
-
-
+fs.writeFile(__dirname + '/data/testing-MakeCSV.csv', buildCSV(data,fields), () => {}); 
