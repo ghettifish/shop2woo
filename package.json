@@ -4,16 +4,16 @@
   "description": "",
   "main": "MassageData.js",
   "scripts": {
+    "build": "node ParseXML.js && node MassageData.js && node MakeCSV.js && rimraf ./data/raw.json && rimraf ./data/clean.json",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
-  "devDependencies": {
-    "xml2js": "^0.4.19"
-  },
+  "devDependencies": {},
   "dependencies": {
+    "dotenv": "^6.2.0",
     "json2csv": "^4.2.1",
-    "mysql": "^2.15.0",
-    "sql": "^0.78.0"
+    "rimraf": "^2.6.3",
+    "xml2js": "^0.4.19"
   }
 }

@@ -197,7 +197,7 @@ function buildJSON(filename) {
   return newJSON;
 }
 
-let data = buildJSON('/data/pprsfull-massaged.json');
+let data = buildJSON('/data/clean.json');
 
 function buildCSV(data, fields){
   const json2csvParser = new Json2csvParser({ fields });
@@ -207,4 +207,4 @@ function buildCSV(data, fields){
 
 //fs.writeFile(__dirname + '/data/testing-buildJSON.json', data, () => {});
 
-fs.writeFile(__dirname + '/data/testing-MakeCSV.csv', buildCSV(data,fields), () => {}); 
+fs.writeFile(__dirname + '/data/pprsfull.csv', buildCSV(data,fields), () => {}); 

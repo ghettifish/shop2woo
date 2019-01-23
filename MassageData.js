@@ -147,11 +147,11 @@ function cleanShopSite(input) {
 //Experimental
 
 
-let newsample = fs.readFileSync(__dirname + '/data/pprsfull.json');
+let newsample = fs.readFileSync(__dirname + '/data/raw.json');
 let jsonsample = JSON.parse(newsample);
 let result = cleanShopSite(jsonsample);
 
-fs.writeFile(__dirname + '/data/pprsfull-massaged.json', JSON.stringify(result, null, 4), () => {})
+fs.writeFile(__dirname + '/data/clean.json', JSON.stringify(result, null, 4), () => {})
 
 console.log("Complete");
 if(variableproblems.length > 0) {
