@@ -1,4 +1,4 @@
-const imageDir = 'http://pprs-clone.vm/wp-content/uploads/store/';
+const imageDir = 'http://staging-pikespeakrock.kinsta.com/wp-content/uploads/store/';
 const showInvalid = true;
 
 const fs = require('fs');
@@ -41,9 +41,21 @@ function SortProducts() {
   this['Published'] = 1; // 1 or 0
   this['Allow customer reviews?'] = 0;
   this['Attribute 1 name'] = 'options';
-
+  let visibility;
   this["buildProduct"] = function(product, type) {
-    let visibility = product['Use'] === 'checked' ? 'visible' : 'hidden';
+    if(product['ProductOptions']) {
+      let productOptions = product['ProductOptions']
+      let hasChecked = productOptions.some(function(element) {
+       return element['Use'] === "checked";
+      });
+      visibility = hasChecked ? 'visible' : 'hidden'; 
+
+    } else if (type === "simple") {
+      visibility =  checkVisibility(product) ? 'visible' : 'hidden';
+    } else if(type === "variation") {
+      visibility = product['Use'] ? 'visible' : 'hidden';
+    }
+    
     this['Type'] = type;
     this['SKU'] = product['SKU'];
     this['Name'] = product['Name'];
@@ -79,6 +91,19 @@ function valid(product, logger) {
 }
 
 
+function checkVisibility(obj) {
+  if(obj.hasOwnProperty("ProductOnPages")) {
+    if(obj["ProductOnPages"].length > 0) return true;
+  } else false;
+}
+
+function getNames(products) {
+  let arr = [];
+  products.forEach(k => {
+    arr.push(k['Name']);
+  });
+  return arr.join();
+}
 
 function buildVariation(product, parentSKU, position, newJSON, parentPrice, parentDescription, parentName, passedName) {
   let revProduct = new SortProducts();
@@ -105,13 +130,16 @@ function buildVariation(product, parentSKU, position, newJSON, parentPrice, pare
 function buildVariable(product, newJSON) {
   let revProduct = new SortProducts();
   revProduct.buildProduct(product,"variable");
-  revProduct['Attribute 1 value(s)'] = product["OptionMenus"].join(",");
+  // revProduct['Attribute 1 value(s)'] = product["OptionMenus"].join(",");
+  revProduct['Attribute 1 value(s)'] = getNames(product["ProductOptions"]);
   revProduct['Regular price']  =  product["Price"];
-  revProduct['Description'] = product['ProductDescription'];
+  revProduct['Description'] = product['ProductDescription'].replace( /\s\s+/g, ' ' );
   revProduct['Attribute 1 visible'] = 1;
   newJSON.push(revProduct);
   product["ProductOptions"].forEach((k,position) => {
-    buildVariation(k, product['SKU'], (position + 1), newJSON, product["Price"], product['ProductDescription'],product['Name'],product["OptionMenus"][position]);
+    // buildVariation(k, product['SKU'], (position + 1), newJSON, product["Price"], product['ProductDescription'],product['Name'],product["OptionMenus"][position]);
+    buildVariation(k, product['SKU'], (position + 1), newJSON, product["Price"], product['ProductDescription'],product['Name'],k['Name']);
+
   });
 
   
